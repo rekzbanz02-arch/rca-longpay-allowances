@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PNP RCA and Long Pay Tracker</title>
+<style>
+  :root {
+    --green-dark: #146b3a;
+    --green-main: #2e8b57;
+    --green-soft: #dff3e5;
+    --green-light: #f7fff9;
+    --line: #cdebd5;
+    --text: #183d2b;
+    --orange: #d98200;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    font-family: Arial, sans-serif;
+    background: #eef8f0;
+    margin: 0;
+    padding: 10px;
+    color: var(--text);
+  }
+
+  .container {
+    max-width: 980px;
+    margin: auto;
+    background: #fff;
+    padding: 12px;
+    border-radius: 14px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.12);
+  }
+
+  h1 {
+    text-align: center;
+    color: var(--green-dark);
+    margin: 0 0 8px;
+    font-size: 22px;
+  }
+
+  .controls {
+    background: var(--green-soft);
+    border-left: 5px solid #1f8f4d;
+    border-radius: 8px;
+    padding: 8px;
+    margin-bottom: 8px;
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 8px;
+    align-items: end;
+  }
+
+  label {
+    font-weight: bold;
+    display: block;
+    margin-bottom: 3px;
+    font-size: 13px;
+    color: var(--green-dark);
+  }
+
+  input[type="date"] {
+    width: 100%;
+    padding: 7px;
+    border: 1px solid #9ccdab;
+    border-radius: 7px;
+    font-size: 13px;
+  }
+
+  button {
+    border: none;
+    padding: 8px 12px;
+    border-radius: 7px;
+    font-weight: bold;
+    cursor: pointer;
+    background: var(--green-main);
+    color: #fff;
+    white-space: nowrap;
+  }
+
+  button.secondary { background: #446b55; }
+  button:hover { opacity: 0.92; }
+
+  .summary-card {
+    background: #f3fbf5;
+    border: 1px solid #b8dfc3;
+    border-radius: 8px;
+    padding: 6px;
+    margin-bottom: 8px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 5px;
+    font-size: 12px;
+  }
+
+  .summary-card div {
+    background: rgba(255,255,255,0.65);
+    border-radius: 6px;
+    padding: 4px 5px;
+    line-height: 1.2;
+  }
+
+  .label {
+    font-weight: bold;
+    color: var(--green-dark);
+  }
+
+  details {
+    margin: 8px 0;
+    border: 1px solid #b8dfc3;
+    border-radius: 9px;
+    background: var(--green-light);
+    overflow: hidden;
+  }
+
+  summary {
+    padding: 9px 10px;
+    font-weight: bold;
+    cursor: pointer;
+    background: var(--green-main);
+    color: #fff;
+    font-size: 14px;
+  }
+
+  .table-wrap { overflow-x: auto; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    min-width: 440px;
+    font-size: 12px;
+  }
+
+  th, td {
+    padding: 4px 3px;
+    border-bottom: 1px solid var(--line);
+    text-align: center;
+    vertical-align: middle;
+    line-height: 1.2;
+  }
+
+  th { background: #d9f2df; }
+
+  th:nth-child(1), td:nth-child(1) { width: 34px; }
+  th:nth-child(2), td:nth-child(2) { width: 96px; }
+  th:nth-child(3), td:nth-child(3) { width: 58px; }
+  th:nth-child(4), td:nth-child(4) { width: auto; }
+
+  .finished {
+    color: green;
+    font-weight: bold;
+  }
+
+  .coming {
+    color: var(--orange);
+    font-weight: bold;
+  }
+
+  .countdown {
+    font-size: 11px;
+    color: #555;
+    margin-top: 2px;
+    font-weight: normal;
+  }
+
+  .empty {
+    text-align: center;
+    color: #666;
+    padding: 12px;
+  }
+
+
+  .export-row {
+    display: flex;
+    justify-content: center;
+    margin-top: 10px;
+  }
+
+  @media (max-width: 700px) {
+    body { padding: 6px; }
+    .container { padding: 9px; }
+    .controls { grid-template-columns: 1fr; }
+    .summary-card { grid-template-columns: 1fr; }
+    h1 { font-size: 20px; }
+    table { min-width: 420px; font-size: 11px; }
+    th, td { padding: 4px 3px; }
+  }
+
+  @media print {
+    body { background: #fff; padding: 0; }
+    .container { box-shadow: none; border-radius: 0; max-width: 100%; }
+    .controls, .no-print { display: none !important; }
+    details { page-break-inside: avoid; }
+    summary { color: #000; background: #d9f2df; }
+    table { min-width: 0; font-size: 11px; }
+  }
+</style>
+</head>
+<body>
+<div class="container" id="reportArea">
+  <h1>PNP RCA & Long Pay Tracker</h1>
+
+  <div class="controls no-print">
+    <div>
+      <label for="enteredDate">Entered Service</label>
+      <input type="date" id="enteredDate" />
+    </div>
+
+    <div>
+      <label for="retirementDate">Retirement Date</label>
+      <input type="date" id="retirementDate" />
+    </div>
+
+    <button onclick="generateTables()">Generate</button>
+  </div>
+
+  <div class="summary-card" id="summaryInfo"></div>
+
+  <details open>
+    <summary>RCA / Clothing Allowance — Every 3 yrs</summary>
+    <div class="table-wrap">
+      <table id="rcaTable">
+        <thead>
+          <tr>
+            <th>No.</th>
+            <th>Date</th>
+            <th>Svc</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </details>
+
+  <details open>
+    <summary>Longevity Pay / Long Pay — Every 5 yrs</summary>
+    <div class="table-wrap">
+      <table id="longPayTable">
+        <thead>
+          <tr>
+            <th>No.</th>
+            <th>Date</th>
+            <th>Svc</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </details>
+
+  <div class="export-row no-print">
+    <button class="secondary" onclick="exportPDF()">Export PDF</button>
+  </div>
+
+  <footer style="margin-top:12px;text-align:center;font-size:12px;color:#666;border-top:1px solid #cdebd5;padding-top:8px;">
+    Developed by <strong>RekzBanz @2026</strong>
+  </footer>
+
+</div>
+
+<script>
+const RCA_INTERVAL = 3;
+const LONG_PAY_INTERVAL = 5;
+const STORAGE_KEY = "allowanceTrackerLastGenerated";
+const SAMPLE_DATA = {
+  enteredDate: "2006-02-01",
+  retirementDate: "2032-02-01"
+};
+
+function parseLocalDate(value) {
+  const parts = value.split("-").map(Number);
+  return new Date(parts[0], parts[1] - 1, parts[2]);
+}
+
+function formatDate(date) {
+  return date.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric"
+  });
+}
+
+function addYears(date, years) {
+  const newDate = new Date(date);
+  newDate.setFullYear(newDate.getFullYear() + years);
+  return newDate;
+}
+
+function getFullDateDifference(fromDate, toDate) {
+  let years = toDate.getFullYear() - fromDate.getFullYear();
+  let months = toDate.getMonth() - fromDate.getMonth();
+  let days = toDate.getDate() - fromDate.getDate();
+
+  if (days < 0) {
+    months--;
+    const previousMonthLastDay = new Date(toDate.getFullYear(), toDate.getMonth(), 0).getDate();
+    days += previousMonthLastDay;
+  }
+
+  if (months < 0) {
+    years--;
+    months += 12;
+  }
+
+  return {
+    years: Math.max(years, 0),
+    months: Math.max(months, 0),
+    days: Math.max(days, 0)
+  };
+}
+
+function formatDuration(diff) {
+  return `${diff.years} yrs, ${diff.months} mos, ${diff.days} days`;
+}
+
+function makeRow(no, payDate, serviceYear, today) {
+  const isFinished = today >= payDate;
+  const countdown = getFullDateDifference(today, payDate);
+
+  return `
+    <tr>
+      <td>${no}</td>
+      <td>${formatDate(payDate)}</td>
+      <td>${serviceYear} yr${serviceYear > 1 ? "s" : ""}</td>
+      <td class="${isFinished ? "finished" : "coming"}">
+        ${isFinished ? "Finished" : "Coming"}
+        ${!isFinished ? `<div class="countdown">${formatDuration(countdown)} left</div>` : ""}
+      </td>
+    </tr>
+  `;
+}
+
+function generatePayTable(tableId, startDate, retirementDate, interval) {
+  const tbody = document.querySelector(`#${tableId} tbody`);
+  tbody.innerHTML = "";
+
+  const today = new Date();
+  let count = 1;
+
+  for (let serviceYear = interval; ; serviceYear += interval) {
+    const payDate = addYears(startDate, serviceYear);
+    if (payDate > retirementDate) break;
+    tbody.insertAdjacentHTML("beforeend", makeRow(count, payDate, serviceYear, today));
+    count++;
+  }
+
+  if (count === 1) {
+    tbody.innerHTML = `<tr><td colspan="4" class="empty">No entries in selected period.</td></tr>`;
+  }
+}
+
+function generateTables() {
+  const enteredValue = document.getElementById("enteredDate").value;
+  const retirementValue = document.getElementById("retirementDate").value;
+
+  if (!enteredValue || !retirementValue) {
+    alert("Enter service date and retirement date.");
+    return;
+  }
+
+  const enteredDate = parseLocalDate(enteredValue);
+  const retirementDate = parseLocalDate(retirementValue);
+
+  if (retirementDate <= enteredDate) {
+    alert("Retirement date must be later than entered service date.");
+    return;
+  }
+
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({
+    enteredDate: enteredValue,
+    retirementDate: retirementValue
+  }));
+
+  const today = new Date();
+  const service = today < enteredDate ? { years: 0, months: 0, days: 0 } : getFullDateDifference(enteredDate, today);
+
+  const remaining = today >= retirementDate ? { years: 0, months: 0, days: 0 } : getFullDateDifference(today, retirementDate);
+
+  document.getElementById("summaryInfo").innerHTML = `
+    <div><span class="label">Entered:</span> ${formatDate(enteredDate)}</div>
+    <div><span class="label">Retire:</span> ${formatDate(retirementDate)}</div>
+    <div><span class="label">Service:</span> ${formatDuration(service)}</div>
+    <div><span class="label">Remaining:</span> ${formatDuration(remaining)}</div>
+  `;
+
+  generatePayTable("rcaTable", enteredDate, retirementDate, RCA_INTERVAL);
+  generatePayTable("longPayTable", enteredDate, retirementDate, LONG_PAY_INTERVAL);
+}
+
+function loadSavedData() {
+  const saved = localStorage.getItem(STORAGE_KEY);
+  const data = saved ? JSON.parse(saved) : SAMPLE_DATA;
+
+  document.getElementById("enteredDate").value = data.enteredDate;
+  document.getElementById("retirementDate").value = data.retirementDate;
+
+  generateTables();
+}
+
+function exportPDF() {
+  window.print();
+}
+
+window.addEventListener("load", loadSavedData);
+</script>
+</body>
+</html>
